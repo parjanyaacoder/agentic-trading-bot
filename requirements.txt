@@ -1,0 +1,15 @@
+tavily-python
+langchain
+spacy==3.8.6
+thinc>=8.3.4,<8.4.0
+langgraph
+polygon
+langchain_community 
+langchain_google_genai
+streamlit
+fastapi[all]
+uvicorn
+langchain-pinecone
+
+
+-e .
