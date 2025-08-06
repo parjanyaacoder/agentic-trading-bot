@@ -1,20 +1,21 @@
 import os
 from langchain.tools import tool
 from langchain_community.tools import TavilySearchResults
-from langchain_core.tools.polygon.financials import PolygonFinancials
-from langchain_community.utilties.polygon import PolygonAPIWrapper
+from langchain_community.tools.polygon.financials import PolygonFinancials
+from langchain_community.utilities.polygon import PolygonAPIWrapper
 from langchain_community.tools.bing_search import BingSearchResults
 from data_models.models import RagToolSchema
 from langchain_pinecone import PineconeVectorStore
-from utils.model_loader import ModelLoader
+from utils.model_loaders import ModelLoader
 from utils.config_loader import load_config
 from dotenv import load_dotenv
+from pinecone import Pinecone
 
+load_dotenv()
 api_wrapper = PolygonAPIWrapper()
 model_loader = ModelLoader()
 config = load_config()
 
-load_dotenv()
 
 pinecode_api_key = os.getenv("PINECODE_API_KEY")
 pc = Pinecone(api_key=pinecode_api_key)

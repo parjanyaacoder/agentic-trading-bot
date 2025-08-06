@@ -1,3 +1,6 @@
 .env
 env
 logs
+agentic_trading_bot.egg-info/
+__pycache__/
+*.pyc

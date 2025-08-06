@@ -1,8 +1,9 @@
 import os 
-import templine
+import tempfile
 from typing import List
 from dotenv import load_dotenv
-from langchain_core.document_loaders import PyPDFLoader, Docx2txtLoader
+from langchain_core.documents import Document
+from langchain_community.document_loaders import PyPDFLoader, Docx2txtLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_pinecone import PineconeVectorStore
 from utils.model_loaders import ModelLoader
