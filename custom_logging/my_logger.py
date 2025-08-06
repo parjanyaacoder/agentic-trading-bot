@@ -15,3 +15,11 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger("my_agentic_app")
+
+# Add custom success method to logger
+def success(self, message):
+    """Custom success logging method"""
+    self.info(f"✅ SUCCESS: {message}")
+
+# Add the success method to the logger class
+logging.Logger.success = success

@@ -3,7 +3,7 @@ import requests
 from exception.exceptions import TradingBotException
 import sys
 
-BASE_URL = "http://localhost:8001"
+BASE_URL = "http://localhost:8000"
 
 st.set_page_config(
     page_title="📈 Stock Market Agentic Chatbot",
@@ -13,6 +13,22 @@ st.set_page_config(
 )
 
 st.title("📈 Stock Market Agentic Chatbot")
+
+# Check server status
+try:
+    response = requests.get(f"{BASE_URL}/health", timeout=3)
+    if response.status_code == 200:
+        st.success("✅ Backend server is running")
+    else:
+        st.warning("⚠️ Backend server responded with an error")
+except requests.exceptions.ConnectionError:
+    st.error("❌ Backend server is not running")
+    st.info("💡 Start the server with: `python -m uvicorn main:app --host 0.0.0.0 --port 8000`")
+except requests.exceptions.Timeout:
+    st.warning("⚠️ Backend server is slow to respond")
+    st.info("💡 The server is running but taking time to respond")
+except Exception as e:
+    st.warning(f"⚠️ Cannot check server status: {str(e)}")
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -29,18 +45,25 @@ with st.sidebar:
                 file_data = f.read()
                 if not file_data:
                     continue
-                files.append(("files", (getattr(f, "name", "file.pdf"), file_data, f.type)))
+                filename = f.name if hasattr(f, 'name') else f"file_{len(files)}.pdf"
+                files.append(("files", (filename, file_data, f.type)))
 
             if files:
                 try:
                     with st.spinner("Uploading and processing files..."):
-                        response = requests.post(f"{BASE_URL}/upload", files=files)
+                        response = requests.post(f"{BASE_URL}/upload", files=files, timeout=30)
                         if response.status_code == 200:
                             st.success("✅ Files uploaded and processed successfully!")
                         else:
-                            st.error("❌ Upload failed: " + response.text)
+                            st.error(f"❌ Upload failed (Status: {response.status_code}): {response.text}")
+                except requests.exceptions.ConnectionError:
+                    st.error("❌ Cannot connect to server. Make sure the FastAPI server is running on port 8000.")
+                    st.info("💡 To start the server, run: `python -m uvicorn main:app --host 0.0.0.0 --port 8000`")
+                except requests.exceptions.Timeout:
+                    st.error("❌ Request timed out. The server is taking too long to respond.")
                 except Exception as e:
-                    raise TradingBotException(e, sys)
+                    st.error(f"❌ Upload failed: {str(e)}")
+                    st.info("💡 Check if the FastAPI server is running and accessible.")
             else:
                 st.warning("Some files were empty or unreadable.")
 
@@ -61,14 +84,20 @@ if submit_button and user_input.strip():
 
         with st.spinner("Bot is thinking..."):
             payload = {"question": user_input}
-            response = requests.post(f"{BASE_URL}/query", json=payload)
+            response = requests.post(f"{BASE_URL}/query", json=payload, timeout=30)
 
         if response.status_code == 200:
             answer = response.json().get("answer", "No answer returned.")
             st.session_state.messages.append({"role": "bot", "content": answer})
             st.rerun()  
         else:
-            st.error("❌ Bot failed to respond: " + response.text)
+            st.error(f"❌ Bot failed to respond (Status: {response.status_code}): {response.text}")
 
+    except requests.exceptions.ConnectionError:
+        st.error("❌ Cannot connect to server. Make sure the FastAPI server is running on port 8000.")
+        st.info("💡 To start the server, run: `python -m uvicorn main:app --host 0.0.0.0 --port 8000`")
+    except requests.exceptions.Timeout:
+        st.error("❌ Request timed out. The server is taking too long to respond.")
     except Exception as e:
-        raise TradingBotException(e, sys)
+        st.error(f"❌ Chat failed: {str(e)}")
+        st.info("💡 Check if the FastAPI server is running and accessible.")

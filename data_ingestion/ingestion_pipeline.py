@@ -21,7 +21,7 @@ class DataIngestion:
     def _load_env_variables(self):
         load_dotenv()
         required_env_vars = [
-            "PINECODE_API_KEY",
+            "PINECONE_API_KEY",
             "GOOGLE_API_KEY",
         ]
 
@@ -31,56 +31,72 @@ class DataIngestion:
             raise EnvironmentError(f"Missing environment variables: {missing_vars}")
 
         self.google_api_key = os.getenv("GOOGLE_API_KEY")
-        self.pinecode_api_key = os.getenv("PINECODE_API_KEY")
+        self.pinecone_api_key = os.getenv("PINECONE_API_KEY")
 
     def _load_documents(self, uploaded_files: List[Document]):
         documents = []
+        
         for uploaded_file in uploaded_files:
-            if uploaded_file.name.endswith(".pdf"):
-                with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
-                    temp_file.write(uploaded_file.read())
-                    loader = PyPDFLoader(temp_file.name)
-                    documents.extend(loader.load())
-            elif uploaded_file.name.endswith(".docx"):
-                with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as temp_file:
-                    temp_file.write(uploaded_file.read())
-                    loader = Docx2txtLoader(temp_file.name)
-                    documents.extend(loader.load())
-            else:
-                print(f"Unsupported file type: {uploaded_file.name}")
+            try:
+                if uploaded_file.filename.endswith(".pdf"):
+                    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
+                        temp_file.write(uploaded_file.read())
+                        loader = PyPDFLoader(temp_file.name)
+                        loaded_docs = loader.load()
+                        documents.extend(loaded_docs)
+                        
+                elif uploaded_file.filename.endswith(".docx"):
+                    with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as temp_file:
+                        temp_file.write(uploaded_file.read())
+                        loader = Docx2txtLoader(temp_file.name)
+                        loaded_docs = loader.load()
+                        documents.extend(loaded_docs)
+                        print(f"✅ DOCX loaded: {len(loaded_docs)} sections")
+                        
+                else:
+                    print(f"⚠️  Unsupported file type: {uploaded_file.filename}")
+                    
+            except Exception as e:
+                print(f"❌ Error loading file {uploaded_file.filename}: {str(e)}")
+                
         return documents
     
     def store_in_vector_db(self, documents: List[Document]):
-        text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=1000,
-            chunk_overlap=200,
-            length_function=len,
-        )
-
-        documents = text_splitter.split_documents(documents)
-        pc = Pinecone(api_key=self.pinecode_api_key)
-
-        if not pc.has_index(self.config["vector_db"]["index_name"]):
-            pc.create_index(
-                name=self.config["vector_db"]["index_name"],
-                spec=ServerlessSpec(
-                    dimension=768,
-                    metric="cosine",
-                ),
+        try:
+            text_splitter = RecursiveCharacterTextSplitter(
+                chunk_size=1000,
+                chunk_overlap=200,
+                length_function=len,
             )
 
-        index = pc.Index(self.config["vector_db"]["index_name"])
+            documents = text_splitter.split_documents(documents)
+            pc = Pinecone(api_key=self.pinecone_api_key)
 
-        vector_store = PineconeVectorStore(
-            index=index,
-            embedding=self.model_loader.load_embeddings(),
-        )
-
-        uuids = [str(uuid4()) for _ in range(len(documents))]
-
-        vector_store.add_documents(documents=documents, ids=uuids)
-
-        return uuids
+            index_name = self.config["vector_db"]["index_name"]
+            
+            if not pc.has_index(index_name):
+                pc.create_index(
+                    name=index_name,
+                    spec=ServerlessSpec(
+                        dimension=768,
+                        metric="cosine",
+                    ),
+                )
+            index = pc.Index(index_name)
+            
+            vector_store = PineconeVectorStore(
+                index=index,
+                embedding=self.model_loader.load_embeddings(),
+            )
+            
+            uuids = [str(uuid4()) for _ in range(len(documents))]
+            
+            vector_store.add_documents(documents=documents, ids=uuids)
+            
+            return uuids
+        
+        except Exception as e:
+            return []
 
     def run_pipeline(self, uploaded_files):
         documents = self._load_documents(uploaded_files)
