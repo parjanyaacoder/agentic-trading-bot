@@ -3,7 +3,7 @@ import requests
 from exception.exceptions import TradingBotException
 import sys
 
-BASE_URL = "http://localhost:8000"
+BASE_URL = "https://yx7vuabyvf.ap-south-1.awsapprunner.com/"
 
 st.set_page_config(
     page_title="📈 Stock Market Agentic Chatbot",
