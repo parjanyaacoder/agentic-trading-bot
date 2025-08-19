@@ -10,6 +10,9 @@ streamlit
 fastapi[all]
 uvicorn
 langchain-pinecone
-
+langchain-groq
+pypdf 
+python-docx
+docx2txt
 
 -e .

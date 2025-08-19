@@ -1,0 +1,20 @@
+version: "3.9"
+services:
+  backend:
+    container_name: trading-bot-backend
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    ports:
+      - "8001:8001"
+
+  frontend:
+    container_name: trading-bot-frontend
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    ports:
+      - "8501:8501"
+    depends_on:
+      - backend
+

@@ -57,7 +57,7 @@ async def upload_files(files: List[UploadFile] = File(...)):
         ingestion_pipeline = DataIngestion()
         
         logger.info("🚀 Starting ingestion pipeline...")
-        ingestion_pipeline.run_pipeline(files)
+        await ingestion_pipeline.run_pipeline(files)
         
         logger.success("✅ Files uploaded and processed successfully")
         return {"message": "Files uploaded successfully"}
