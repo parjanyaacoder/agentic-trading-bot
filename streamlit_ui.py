@@ -2,8 +2,9 @@ import streamlit as st
 import requests
 from exception.exceptions import TradingBotException
 import sys
+import os
 
-BASE_URL = "https://yx7vuabyvf.ap-south-1.awsapprunner.com/"
+BASE_URL = os.getenv("BACKEND_URL")
 
 st.set_page_config(
     page_title="📈 Stock Market Agentic Chatbot",

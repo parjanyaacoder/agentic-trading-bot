@@ -9,7 +9,6 @@ RUN pip install --no-cache-dir -r /app/requirements.txt
 
 ENV PYTHONUNBUFFERED=1
 ENV PORT=8501
-ENV BACKEND_URL=http://backend:8001
 
 EXPOSE ${PORT}
 
