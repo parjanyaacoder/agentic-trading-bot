@@ -27,6 +27,10 @@ jobs:
     - name: 🔐 Login to Amazon ECR
       id: login-ecr
       uses: aws-actions/amazon-ecr-login@v2
+      with: 
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ap-south-1
 
     # ---------- Build & push single image ----------
     - name: 🐳 Build, tag & push image
