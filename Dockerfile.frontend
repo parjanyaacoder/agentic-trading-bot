@@ -18,4 +18,4 @@ CMD ["sh", "-c", "streamlit run streamlit_ui.py \
     --server.enableCORS false \
     --server.enableXsrfProtection false \
     --server.headless true \
-    --server.enableWebsocketCompression=false"]
+    --server.enableWebsocketCompression=true"]
