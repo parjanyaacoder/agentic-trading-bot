@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>{{ title | default("Stock Market Chatbot") }}</title>
+  <link rel="stylesheet" href="/static/css/styles.css" />
+</head>
+<body>
+  <header>
+    <h1>📈 Stock Market Agentic Chatbot</h1>
+    <nav>
+      <a href="/">Home</a>
+      <a href="/chat">Chat</a>
+    </nav>
+  </header>
+
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+
+  <script src="/static/js/main.js"></script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

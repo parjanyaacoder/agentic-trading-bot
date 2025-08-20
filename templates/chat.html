@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="chat">
+  <div id="chatWindow"></div>
+
+  <form id="chatForm" autocomplete="off">
+    <input id="userInput" name="question"
+           placeholder="Ask something about NIFTY 50…" />
+    <button type="submit">Send</button>
+  </form>
+</section>
+{% endblock %}

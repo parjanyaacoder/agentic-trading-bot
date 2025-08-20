@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="upload">
+  <h2>Upload Market Documents</h2>
+  <form id="uploadForm" enctype="multipart/form-data">
+    <input type="file" name="files" multiple accept=".pdf,.docx" />
+    <button type="submit">Upload &amp; Ingest</button>
+  </form>
+  <div id="uploadStatus"></div>
+</section>
+{% endblock %}

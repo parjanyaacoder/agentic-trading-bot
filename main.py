@@ -1,12 +1,16 @@
-from fastapi import FastAPI, UploadFile, File, Request
+from fastapi import FastAPI, UploadFile, File, Request, Form 
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List
-from starlette.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+from starlette.background import BackgroundTasks
+# from starlette.responses import JSONResponse
 from data_ingestion.ingestion_pipeline import DataIngestion
 from agent.workflow import GraphBuilder 
 from data_models.models import *
 from custom_logging.my_logger import logger
-import traceback
+import traceback, os
         
 
 # Add immediate console output
@@ -33,44 +37,41 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.get("/")
-async def root():
-    """Health check endpoint"""
-    return {"message": "Trading Bot API is running!", "status": "healthy"}
+app.mount("/static", StaticFiles(directory="static"), name="static")
+templates = Jinja2Templates(directory="templates")
+
+@app.get("/", response_class=HTMLResponse)
+async def home(request: Request):
+    """Landing page with health status."""
+    return templates.TemplateResponse("index.html", {"request": request})
+
+@app.get("/chat", response_class=HTMLResponse)
+async def chat_ui(request: Request):
+    """Chat UI page."""
+    return templates.TemplateResponse("chat.html", {"request": request})
 
 @app.get("/health")
-async def health_check():
-    """Simple health check endpoint"""
+async def health():
     from datetime import datetime
-    return {"status": "ok", "timestamp": datetime.now().isoformat()}
+    return {"status": "ok", "timestamp": datetime.utcnow().isoformat()}
 
 @app.post("/upload")
 async def upload_files(files: List[UploadFile] = File(...)):
-    logger.info(f"📤 Upload request received with {len(files)} files")
-    
     try:
-        # Log file details
-        for i, file in enumerate(files):
-            logger.info(f"📄 File {i+1}: {file.filename} ({file.size} bytes)")
-        
-        logger.info("🔄 Initializing DataIngestion pipeline...")
+        logger.info(f"📤 Upload request with {len(files)} files")
         ingestion_pipeline = DataIngestion()
-        
-        logger.info("🚀 Starting ingestion pipeline...")
         await ingestion_pipeline.run_pipeline(files)
-        
-        logger.success("✅ Files uploaded and processed successfully")
-        return {"message": "Files uploaded successfully"}
-        
+        return {"message": "Files uploaded and processed"}
     except Exception as e:
-        error_msg = f"❌ Upload failed: {str(e)}"
-        logger.error(error_msg)
-        logger.debug(f"🔍 Full traceback: {traceback.format_exc()}")
-        return JSONResponse(content={"message": error_msg}, status_code=500)
+        logger.error(traceback.format_exc())
+        return JSONResponse(status_code=500,
+                            content={"error": f"Upload failed: {e}"})
+    
+
 
 @app.post("/query")
-async def query_chatbot(request: QuestionRequest):
-    logger.info(f"💬 Query request received: {request.question}")
+async def query_chatbot(question: str = Form(...)):
+    logger.info(f"💬 Query request received: {question}")
     
     try:
         logger.info("🔄 Building graph service...")
@@ -80,7 +81,7 @@ async def query_chatbot(request: QuestionRequest):
 
         # Format messages correctly for LangGraph
         from langchain_core.messages import HumanMessage
-        messages = [HumanMessage(content=request.question)]
+        messages = [HumanMessage(content=question)]
         
         logger.info("🤖 Invoking graph with question...")
         result = graph.invoke({"messages": messages})

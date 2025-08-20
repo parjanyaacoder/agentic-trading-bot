@@ -14,5 +14,7 @@ langchain-groq
 pypdf 
 python-docx
 docx2txt
+jinja2
+python-multipart   # enables form-data parsing
 
 -e .

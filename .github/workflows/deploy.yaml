@@ -1,47 +1,40 @@
-name: Build and push Docker Images to ECR and deploy to AWS
+name: Build -> Push Docker image to ECR
 
 on:
   push:
-    branches: 
-      - master
+    branches: [ master ]
   workflow_dispatch:
 
 jobs:
-  build-and-push-ecr-images:
-    name: Build and push to Amazon ECR
+  build-push-ecr:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write          # needed for OIDC auth
+      contents: read
 
     steps:
-    - name: Checkout code
+    - name: ⬇️  Checkout code
       uses: actions/checkout@v3
 
-    - name: Configure AWS Credentials
+    # ---------- AWS authentication (OIDC) ----------
+    - name: 🔑 Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v4
-      with: 
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      with:
+        role-to-assume: ${{ secrets.AWS_OIDC_ROLE_ARN }}
         aws-region: ap-south-1
 
-    - name: Login to Amazon ECR
+    # ---------- ECR login ----------
+    - name: 🔐 Login to Amazon ECR
       id: login-ecr
       uses: aws-actions/amazon-ecr-login@v2
 
-    - name: Build, tag and push Backend image to Amazon ECR 
+    # ---------- Build & push single image ----------
+    - name: 🐳 Build, tag & push image
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        ECR_REPOSITORY: trading-bot-backend
+        ECR_REPOSITORY: trading-bot          # one repo now
         IMAGE_TAG: latest
-
-      run: | 
-        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f Dockerfile.backend .
-        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-
-    - name: Build, tag and push Frontend image to Amazon ECR 
-      env:
-        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        ECR_REPOSITORY: trading-bot-frontend
-        IMAGE_TAG: latest
-
-      run: | 
-        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f Dockerfile.frontend .
+      run: |
+        docker build -t $ECR_REPOSITORY .
+        docker tag  $ECR_REPOSITORY $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG

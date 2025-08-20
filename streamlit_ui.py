@@ -27,7 +27,7 @@ logger.info(f"Start time: {datetime.now()}")
 logger.info(f"Python version: {sys.version}")
 logger.info(f"Streamlit version: {st.__version__}")
 
-BASE_URL = os.getenv("BACKEND_URL")
+BASE_URL = "http://localhost:8000"
 logger.info(f"BASE_URL from environment: {BASE_URL}")
 
 # Log page configuration
